@@ -1,0 +1,18 @@
+{
+  "time" : 0,
+  "gain" : 2,
+  "clockDivider" : 4,
+  "acquisitionCycles" : 16,
+  "oversampleRate" : 1,
+  "sampleRate" : 384000,
+  "sampleRateDivider" : 8,
+  "sleepDuration" : 0,
+  "recordDuration" : 60,
+  "enableLED" : 1,
+  "activeStartStopPeriods" : 0,
+  "timezone" : 0,
+  "useFilter" : 1,
+  "goertzelFreq" : 1400,
+  "goertzelThresh" : 10000.0,
+  "goertzelFactor" : 0.8
+}
