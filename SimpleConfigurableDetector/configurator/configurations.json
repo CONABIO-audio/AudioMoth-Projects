@@ -1,0 +1,66 @@
+{
+  "8000": {
+    "clockDivider": 4,
+    "acquisitionCycles": 16,
+    "oversampleRate": 1,
+    "sampleRate": 256000,
+    "sampleRateDivider": 32,
+    "current": 10.5
+  },
+  "16000": {
+    "clockDivider": 4,
+    "acquisitionCycles": 16,
+    "oversampleRate": 1,
+    "sampleRate": 256000,
+    "sampleRateDivider": 16,
+    "current": 12.0
+  },
+  "32000": {
+    "clockDivider": 4,
+    "acquisitionCycles": 16,
+    "oversampleRate": 1,
+    "sampleRate": 256000,
+    "sampleRateDivider": 8,
+    "current": 12.5
+  },
+  "48000": {
+    "clockDivider": 4,
+    "acquisitionCycles": 16,
+    "oversampleRate": 1,
+    "sampleRate": 384000,
+    "sampleRateDivider": 8,
+    "current": 13.5
+  },
+  "96000": {
+    "clockDivider": 4,
+    "acquisitionCycles": 16,
+    "oversampleRate": 1,
+    "sampleRate": 384000,
+    "sampleRateDivider": 4,
+    "current": 17.5
+  },
+  "192000": {
+    "clockDivider": 4,
+    "acquisitionCycles": 16,
+    "oversampleRate": 1,
+    "sampleRate": 384000,
+    "sampleRateDivider": 2,
+    "current": 24.5
+  },
+  "256000": {
+    "clockDivider": 4,
+    "acquisitionCycles": 16,
+    "oversampleRate": 1,
+    "sampleRate": 256000,
+    "sampleRateDivider": 1,
+    "current": 30.0
+  },
+  "384000": {
+    "clockDivider": 4,
+    "acquisitionCycles": 16,
+    "oversampleRate": 1,
+    "sampleRate": 384000,
+    "sampleRateDivider": 1,
+    "current": 39.0
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "gain" : 2,
+  "clockDivider" : 4,
+  "acquisitionCycles" : 16,
+  "oversampleRate" : 1,
+  "sampleRate" : 384000,
+  "sampleRateDivider" : 8,
+  "enableLED" : 1,
+  "goertzelFreq" : 1400,
+  "goertzelThresh" : 10000.0,
+  "goertzelFactor" : 0.8
+}
