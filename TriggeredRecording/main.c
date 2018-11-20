@@ -34,7 +34,7 @@
 #define MIN_RECORD_DURATION                 5
 
 /* SRAM buffer constants */
-#define NUMBER_OF_BUFFERS                   8
+#define NUMBER_OF_BUFFERS                   16
 // #define NUMBER_OF_TRIGGER_BUFFERS           2
 #define EXTERNAL_SRAM_SIZE_IN_SAMPLES       (AM_EXTERNAL_SRAM_SIZE_IN_BYTES / 2)
 #define NUMBER_OF_SAMPLES_IN_BUFFER         (EXTERNAL_SRAM_SIZE_IN_SAMPLES / NUMBER_OF_BUFFERS)
@@ -264,7 +264,7 @@ uint32_t *durationOfNextRecording = (uint32_t*)(AM_BACKUP_DOMAIN_START_ADDRESS +
 
 configSettings_t *configSettings = (configSettings_t*)(AM_BACKUP_DOMAIN_START_ADDRESS + 12);
 
-timeSchedule_t *timeSchedule = (timeSchedule_t*)(AM_BACKUP_DOMAIN_START_ADDRESS + 4 + sizeof(configSettings));
+timeSchedule_t *timeSchedule = (timeSchedule_t*)(AM_BACKUP_DOMAIN_START_ADDRESS + 12 + sizeof(configSettings_t));
 
 /* DC filter variables */
 
@@ -280,6 +280,7 @@ static volatile uint32_t writeBufferIndex;
 
 static volatile bool recordingCancelled;
 static volatile bool keep_writing;
+static volatile bool refreshInit = false;
 
 static int16_t* buffers[NUMBER_OF_BUFFERS];
 
@@ -289,9 +290,6 @@ static int16_t* buffers[NUMBER_OF_BUFFERS];
 static float_t thresh_goertzel;
 static float_t coeff_goertzel;
 static float_t factor_goertzel;
-static float_t s0 = 0;
-static float_t s1 = 0;
-static float_t s2 = 0;
 static bool triggerSignal = false;
 static float_t previousPower;
 
@@ -318,8 +316,6 @@ static uint32_t _makeRecording(uint32_t startTime, uint32_t currentTime, uint32_
 static void makeRecording(uint32_t currentTime, uint32_t recordDuration, bool enableLED);
 static void filter(int16_t *source, int16_t *dest, uint8_t sampleRateDivider, uint32_t size);
 static void startFilter(void);
-static void resetFilterVars(void);
-static void iterateFilterVars(float_t sample);
 static void scheduleRecording(uint32_t currentTime, uint32_t *timeOfNextRecording, uint32_t *durationOfNextRecording);
 
 /* Main function */
@@ -331,7 +327,7 @@ int main(void) {
 
     AM_switchPosition_t switchPosition = AudioMoth_getSwitchPosition();
 
-    if (AudioMoth_isInitialPowerUp()) {
+    if (AudioMoth_isInitialPowerUp() || refreshInit) {
 
         *timeOfNextRecording = 0;
 
@@ -339,8 +335,12 @@ int main(void) {
 
         *previousSwitchPosition = AM_SWITCH_NONE;
 
-        memcpy(configSettings, &defaultConfigSettings, sizeof(configSettings_t));
-        memcpy(timeSchedule, &defaultTimeSchedule, sizeof(timeSchedule_t));
+        if (!refreshInit){
+        	memcpy(configSettings, &defaultConfigSettings, sizeof(configSettings_t));
+        	memcpy(timeSchedule, &defaultTimeSchedule, sizeof(timeSchedule_t));
+        }
+
+        refreshInit = false;
 
     } else {
 
@@ -520,6 +520,8 @@ void AudioMoth_usbApplicationtTimeScheduleReceived(uint32_t messageType, uint8_t
     /* Copy the back-up register data structure to the USB packet */
     memcpy(transmitBuffer + 1,timeSchedule->startStopPeriods, 10*sizeof(uint16_t));
 
+    refreshInit = true;
+
 
 }
 
@@ -565,6 +567,8 @@ inline void AudioMoth_usbApplicationPacketReceived(uint32_t messageType, uint8_t
 
     AudioMoth_setTime(configSettings->time);
 
+    refreshInit = true;
+
 }
 
 /* Remove DC offset from the microphone samples */
@@ -573,9 +577,12 @@ static void filter(int16_t *source, int16_t *dest, uint8_t sampleRateDivider, ui
 
     int32_t filteredOutput;
     int32_t scaledPreviousFilterOutput;
-    float_t power, newPower;
+    float_t power;
+    // float_t newPower;
 
-    resetFilterVars();
+    float_t s0, s1, s2;
+
+    s0 = s1 = 0;
 
     int index = 0;
 
@@ -600,41 +607,42 @@ static void filter(int16_t *source, int16_t *dest, uint8_t sampleRateDivider, ui
 
         filteredOutput = sample - previousSample + scaledPreviousFilterOutput;
 
+
+
+        /* Goertzel filter calculations */
+
+
+        if (filteredOutput > INT16_MAX) {
+
+            dest[index++] = INT16_MAX;
+
+        } else if (filteredOutput < INT16_MIN) {
+
+            dest[index++] = INT16_MIN;
+
+        } else {
+
+            dest[index++] = (int16_t)filteredOutput;
+
+        }
+
         previousFilterOutput = filteredOutput;
 
         previousSample = sample;
 
         /* Goertzel filter calculations */
 
+        s2 = ( (float_t)(int16_t)filteredOutput / (float_t)INT16_MAX ) + coeff_goertzel * s1 - s0;
+        s0 = s1;
+        s1 = s2;
 
-
-        int16_t dsample;
-
-        if (filteredOutput > INT16_MAX) {
-
-            dest[index++] = INT16_MAX;
-            dsample = INT16_MAX;
-
-        } else if (filteredOutput < INT16_MIN) {
-
-            dest[index++] = INT16_MIN;
-            dsample = INT16_MIN;
-
-        } else {
-
-            dest[index++] = (int16_t)filteredOutput;
-            dsample = (int16_t)filteredOutput;
-
-        }
-
-        iterateFilterVars(dsample);
 
     }
 
     /* Moving mean detection */
 
-    newPower = s1 * s1 + s0 * s0 - coeff_goertzel * s1 * s0;
-    power = factor_goertzel * newPower + (1 - factor_goertzel) * previousPower;
+    power = s1 * s1 + s0 * s0 - coeff_goertzel * s1 * s0;
+    //power = factor_goertzel * newPower + (1 - factor_goertzel) * previousPower;
 
     if (power >= thresh_goertzel) {
 
@@ -646,7 +654,7 @@ static void filter(int16_t *source, int16_t *dest, uint8_t sampleRateDivider, ui
 
     }
 
-    previousPower = power;
+    //previousPower = power;
 
 }
 
@@ -681,17 +689,8 @@ static void startFilter() {
 
 }
 
-static void iterateFilterVars(float_t sample){
-    s2 = ( sample / (float_t)INT16_MAX ) + coeff_goertzel * s1 - s0;
-    s0 = s1;
-    s1 = s2;
-}
 
-static void resetFilterVars(){
-    s2 = 0;
-    s0 = 0;
-    s1 = 0;
-}
+
 
 static uint32_t _makeRecording(uint32_t startTime, uint32_t currentTime, uint32_t maxDuration, bool enableLED) {
 
@@ -855,13 +854,10 @@ static void listenMakeRecording(uint32_t startTime, uint32_t maxDuration, bool e
 
     /* Initialise file system and open a new file */
 
-
-    uint32_t potentialSamples = configSettings->sampleRate / configSettings->sampleRateDivider * maxDuration;
     uint32_t buffersProcessed = 0;
 
 
     while (!recordingCancelled){
-
             if (buffersProcessed >= NUMBER_OF_BUFFERS_TO_SKIP) {
                     if (triggerSignal){
                     	FLASH_LED(Green, SHORT_LED_FLASH_DURATION);
