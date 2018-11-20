@@ -473,18 +473,6 @@ void AudioMoth_startMicrophoneSamples(uint32_t sampleRate) {
 
 }
 
-int16_t AudioMoth_getMicrophoneSamples(int nsamples){
-	int16_t dsamples[nsamples];
-	for (int i=0;i<nsamples;i++){
-		dsamples[i] = ADC_DataScanGet(ADC0);
-	}
-	return dsamples;
-}
-
-int16_t AudioMoth_getMicrophoneSingleSample(void){
-	int16_t sample = ADC_DataSingleGet(ADC0);
-	return sample;
-}
 
 void AudioMoth_initialiseMicrophoneInterupts(void) {
 

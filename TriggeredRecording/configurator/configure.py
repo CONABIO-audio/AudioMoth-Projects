@@ -330,7 +330,7 @@ def parse_args():
     parser.add_argument(
         '--set_time',
         type=bool,
-        default=False)
+        default=True)
 
     parser.add_argument(
         '--time_schedule',

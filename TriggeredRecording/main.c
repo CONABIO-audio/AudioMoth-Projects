@@ -640,8 +640,8 @@ static void filter(int16_t *source, int16_t *dest, uint8_t sampleRateDivider, ui
     }
 
     /* Moving mean detection */
-
     power = s1 * s1 + s0 * s0 - coeff_goertzel * s1 * s0;
+    //newPower = s1 * s1 + s0 * s0 - coeff_goertzel * s1 * s0;
     //power = factor_goertzel * newPower + (1 - factor_goertzel) * previousPower;
 
     if (power >= thresh_goertzel) {
@@ -678,6 +678,7 @@ static void startFilter() {
     coeff_goertzel = cos(2.0 * M_PI * (targetSampleRate / realSampleRate));
     thresh_goertzel = configSettings->goertzelThresh;
     factor_goertzel = configSettings->goertzelFactor;
+    // previousPower = 0;
 
     /* Initialise microphone for recording */
 
@@ -694,8 +695,6 @@ static void startFilter() {
 
 static uint32_t _makeRecording(uint32_t startTime, uint32_t currentTime, uint32_t maxDuration, bool enableLED) {
 
-    /* Initialise buffers */
-
     writeBufferIndex = 0;
 
     writeBuffer = 0;
@@ -703,12 +702,6 @@ static uint32_t _makeRecording(uint32_t startTime, uint32_t currentTime, uint32_
     recordingCancelled = false;
 
     keep_writing = true;
-
-    buffers[0] = (int16_t*)AM_EXTERNAL_SRAM_START_ADDRESS;
-
-    for (int i = 1; i < NUMBER_OF_BUFFERS; i += 1) {
-        buffers[i] = buffers[i - 1] + NUMBER_OF_SAMPLES_IN_BUFFER;
-    }
 
     /* Calculate recording parameters */
 
@@ -847,6 +840,14 @@ static void listenMakeRecording(uint32_t startTime, uint32_t maxDuration, bool e
     writeBuffer = 0;
 
     recordingCancelled = false;
+
+    buffers[0] = (int16_t*)AM_EXTERNAL_SRAM_START_ADDRESS;
+
+    for (int i = 1; i < NUMBER_OF_BUFFERS; i += 1) {
+        buffers[i] = buffers[i - 1] + NUMBER_OF_SAMPLES_IN_BUFFER;
+    }
+
+    AudioMoth_enableExternalSRAM();
 
     /* Start microphone samples and initialize goertzel filter variables */
 
