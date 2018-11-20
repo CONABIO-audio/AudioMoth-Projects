@@ -116,6 +116,8 @@ def struct_config(config):
 
     result += struct_field(config, 'timezone', 'B')
     result += struct_field(config, 'useFilter', '?')
+    result += struct_field(config, 'minRecordDuration', '>H')
+    
     result += struct_field(config, 'goertzelFreq', '>L')
     result += struct_field(config, 'goertzelThresh', '>f')
     result += struct_field(config, 'goertzelFactor', '>f')
@@ -146,6 +148,7 @@ def parse_config(packet):
     activeStartStopPeriods, start = get_part(packet, 1, start)
     timezone, start = get_part(packet, 1, start)
     useFilter, start = get_part(packet, 1, start)
+    minRecordDuration, start = get_part(packet,2,start)
     goertzelFreq, start = get_part(packet, 4, start)
     goertzelThresh, start = get_part(packet, 4, start)
     goertzelFactor, start = get_part(packet, 4, start)
@@ -163,6 +166,7 @@ def parse_config(packet):
     activeStartStopPeriods = hex_arr_to_int(activeStartStopPeriods)
     timezone = hex_arr_to_int(timezone)
     useFilter = hex_arr_to_bool(useFilter)
+    minRecordDuration = hex_arr_to_int(minRecordDuration)
 
 
     goertzelFreq = hex_arr_to_int(goertzelFreq)
@@ -184,6 +188,7 @@ def parse_config(packet):
         'activeStartStopPeriods' : activeStartStopPeriods,
         'timezone' : timezone,
         'useFilter' : useFilter,
+        'minRecordDuration' : minRecordDuration,
         'goertzelFreq': goertzelFreq,
         'goertzelThresh': goertzelThresh,
         'goertzelFactor': goertzelFactor
@@ -284,7 +289,7 @@ def get_configs(options):
         configs.update(rec_config)
 
     # Goertzel configurations
-    keys = ['useFilter','goertzelFreq', 'goertzelThresh', 'goertzelFactor']
+    keys = ['minRecordDuration','useFilter','goertzelFreq', 'goertzelThresh', 'goertzelFactor']
     goertzel = {
         key: options[key]
         for key in keys
@@ -388,6 +393,11 @@ def parse_args():
     parser.add_argument(
         '--useFilter',
         type=bool)
+
+    parser.add_argument(
+        '--minRecordDuration',
+        type=int,
+        default=5)
 
     parser.add_argument(
         '--goertzelFreq',

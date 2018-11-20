@@ -31,7 +31,7 @@
 #define SECONDS_IN_MINUTE                   60
 #define SECONDS_IN_HOUR                     (60 * SECONDS_IN_MINUTE)
 #define SECONDS_IN_DAY                      (24 * SECONDS_IN_HOUR)
-#define MIN_RECORD_DURATION                 5
+
 
 /* SRAM buffer constants */
 #define NUMBER_OF_BUFFERS                   16
@@ -219,6 +219,7 @@ typedef struct {
     uint8_t activeStartStopPeriods;
     int8_t timezone;
     uint8_t useFilter;
+    uint16_t minRecordDuration;
     uint32_t goertzelFreq;
     float_t goertzelThresh;
     float_t goertzelFactor;
@@ -251,6 +252,7 @@ configSettings_t defaultConfigSettings = {
     .activeStartStopPeriods = 0,
     .timezone = 0,
     .useFilter = 1,
+	.minRecordDuration = 5,
     .goertzelFreq = 1400,
     .goertzelThresh = 10000.0,
     .goertzelFactor = 0.99
@@ -709,7 +711,7 @@ static uint32_t _makeRecording(uint32_t startTime, uint32_t currentTime, uint32_
 
     uint32_t numberOfSamples = configSettings->sampleRate / configSettings->sampleRateDivider * maxDuration;
 
-    uint32_t minNumberOfSamples = configSettings->sampleRate / configSettings->sampleRateDivider * MIN_RECORD_DURATION;
+    uint32_t minNumberOfSamples = configSettings->sampleRate / configSettings->sampleRateDivider * configSettings->minRecordDuration;
 
     uint32_t sampleTolerance = minNumberOfSamples;
 

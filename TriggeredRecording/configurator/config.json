@@ -12,6 +12,7 @@
   "activeStartStopPeriods" : 0,
   "timezone" : 0,
   "useFilter" : 1,
+  "minRecordDuration": 5,
   "goertzelFreq" : 400,
   "goertzelThresh" : 10.0,
   "goertzelFactor" : 1.0
