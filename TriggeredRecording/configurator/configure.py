@@ -108,16 +108,15 @@ def struct_config(config):
     result += struct_field(config, 'oversampleRate', 'B')
     result += struct_field(config, 'sampleRate', '>L')
     result += struct_field(config, 'sampleRateDivider', 'B')
-
     result += struct_field(config, 'sleepDuration', '>H')
     result += struct_field(config, 'recordDuration', '>H')
     result += struct_field(config, 'enableLED', '?')
     result += struct_field(config, 'activeStartStopPeriods', 'B')
-
     result += struct_field(config, 'timezone', 'B')
     result += struct_field(config, 'useFilter', '?')
     result += struct_field(config, 'minRecordDuration', '>H')
-    
+    result += struct_field(config, 'keepWritingMinPos', '>L')
+    result += struct_field(config, 'keepWritingMemoryPercent', '>H')
     result += struct_field(config, 'goertzelFreq', '>L')
     result += struct_field(config, 'goertzelThresh', '>f')
     result += struct_field(config, 'goertzelFactor', '>f')
@@ -149,6 +148,8 @@ def parse_config(packet):
     timezone, start = get_part(packet, 1, start)
     useFilter, start = get_part(packet, 1, start)
     minRecordDuration, start = get_part(packet,2,start)
+    keepWritingMinPos, start = get_part(packet,4,start)
+    keepWritingMemoryPercent, start = get_part(packet,2,start)
     goertzelFreq, start = get_part(packet, 4, start)
     goertzelThresh, start = get_part(packet, 4, start)
     goertzelFactor, start = get_part(packet, 4, start)
@@ -167,8 +168,8 @@ def parse_config(packet):
     timezone = hex_arr_to_int(timezone)
     useFilter = hex_arr_to_bool(useFilter)
     minRecordDuration = hex_arr_to_int(minRecordDuration)
-
-
+    keepWritingMinPos = hex_arr_to_int(keepWritingMinPos)
+    keepWritingMemoryPercent = hex_arr_to_int(keepWritingMemoryPercent)
     goertzelFreq = hex_arr_to_int(goertzelFreq)
     goertzelFactor = hex_arr_to_float(goertzelFactor)
     goertzelThresh = hex_arr_to_float(goertzelThresh)
@@ -189,6 +190,8 @@ def parse_config(packet):
         'timezone' : timezone,
         'useFilter' : useFilter,
         'minRecordDuration' : minRecordDuration,
+        'keepWritingMinPos' : keepWritingMinPos,
+        'keepWritingMemoryPercent' : keepWritingMemoryPercent,
         'goertzelFreq': goertzelFreq,
         'goertzelThresh': goertzelThresh,
         'goertzelFactor': goertzelFactor
@@ -289,7 +292,7 @@ def get_configs(options):
         configs.update(rec_config)
 
     # Goertzel configurations
-    keys = ['minRecordDuration','useFilter','goertzelFreq', 'goertzelThresh', 'goertzelFactor']
+    keys = ['minRecordDuration','useFilter','goertzelFreq', 'goertzelThresh', 'goertzelFactor','keepWritingMinPos','keepWritingMemoryPercent']
     goertzel = {
         key: options[key]
         for key in keys
@@ -398,6 +401,16 @@ def parse_args():
         '--minRecordDuration',
         type=int,
         default=5)
+
+    parser.add_argument(
+        '--keepWritingMinPos',
+        type=int,
+        default=1)
+
+    parser.add_argument(
+        '--keepWritingMemoryPercent',
+        type=float,
+        default=50)
 
     parser.add_argument(
         '--goertzelFreq',

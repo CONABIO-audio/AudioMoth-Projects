@@ -220,6 +220,8 @@ typedef struct {
     int8_t timezone;
     uint8_t useFilter;
     uint16_t minRecordDuration;
+    uint32_t keepWritingMinPos;
+    uint16_t keepWritingMemoryPercent;
     uint32_t goertzelFreq;
     float_t goertzelThresh;
     float_t goertzelFactor;
@@ -238,6 +240,8 @@ timeSchedule_t defaultTimeSchedule = {
     }
 };
 
+
+
 configSettings_t defaultConfigSettings = {
     .time = 0,
     .gain = 2,
@@ -246,15 +250,17 @@ configSettings_t defaultConfigSettings = {
     .oversampleRate = 1,
     .sampleRate = 384000,
     .sampleRateDivider = 8,
-    .sleepDuration = 0,
+    .sleepDuration = 10,
     .recordDuration = 60,
     .enableLED = 1,
     .activeStartStopPeriods = 0,
     .timezone = 0,
     .useFilter = 1,
 	.minRecordDuration = 5,
-    .goertzelFreq = 1400,
-    .goertzelThresh = 10000.0,
+	.keepWritingMinPos = 1,
+	.keepWritingMemoryPercent = 50,
+    .goertzelFreq = 1000,
+    .goertzelThresh = 2.5,
     .goertzelFactor = 0.99
 };
 
@@ -715,6 +721,9 @@ static uint32_t _makeRecording(uint32_t startTime, uint32_t currentTime, uint32_
 
     uint32_t sampleTolerance = minNumberOfSamples;
 
+    uint32_t sumPosSignal = 0;
+
+    uint32_t keepWritingMemorySize = (uint32_t)((float_t)minNumberOfSamples*(1-(float_t)(configSettings->keepWritingMemoryPercent)/100.0)) + numberOfSamplesInHeader;
 
     /* Initialise file system and open a new file */
 
@@ -746,6 +755,10 @@ static uint32_t _makeRecording(uint32_t startTime, uint32_t currentTime, uint32_
 
     uint32_t readBuffer = writeBuffer;
 
+    uint32_t chunkSampleCounter = 0;
+
+
+
     while (samplesWritten < numberOfSamples + numberOfSamplesInHeader && !recordingCancelled && keep_writing) {
 
         while (readBuffer != writeBuffer && samplesWritten < numberOfSamples + numberOfSamplesInHeader && !recordingCancelled && keep_writing) {
@@ -760,13 +773,10 @@ static uint32_t _makeRecording(uint32_t startTime, uint32_t currentTime, uint32_
 
             /* Write the appropriate number of bytes to the SD card */
 
-            uint32_t numberOfSamplesToWrite = 0;
 
-            if (buffersProcessed >= NUMBER_OF_BUFFERS_TO_SKIP) {
+            uint32_t numberOfSamplesToWrite = MIN(numberOfSamples + numberOfSamplesInHeader - samplesWritten, NUMBER_OF_SAMPLES_IN_BUFFER);
 
-                numberOfSamplesToWrite = MIN(numberOfSamples + numberOfSamplesInHeader - samplesWritten, NUMBER_OF_SAMPLES_IN_BUFFER);
 
-            }
 
             RETURN_ON_ERROR(AudioMoth_writeToFile(buffers[readBuffer], 2 * numberOfSamplesToWrite));
 
@@ -778,11 +788,20 @@ static uint32_t _makeRecording(uint32_t startTime, uint32_t currentTime, uint32_
 
             buffersProcessed += 1;
 
+            chunkSampleCounter += samplesWritten;
+
+            if (chunkSampleCounter >= keepWritingMemorySize){
+            	if (triggerSignal){
+            		sumPosSignal ++;
+            	}
+            }
 
             if (samplesWritten >= sampleTolerance + numberOfSamplesInHeader){
             	if (samplesWritten + minNumberOfSamples < numberOfSamples + numberOfSamplesInHeader){
-            		if (triggerSignal){
+            		if (sumPosSignal > configSettings->keepWritingMinPos){
             			sampleTolerance += minNumberOfSamples;
+            			sumPosSignal = 0;
+            			chunkSampleCounter = 0;
                     } else {
                     	keep_writing = false;
                     }
