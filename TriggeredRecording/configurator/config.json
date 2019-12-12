@@ -6,12 +6,12 @@
     "oversampleRate" : 1,
     "sampleRate" : 384000,
     "sampleRateDivider" : 8,
-    "sleepDuration" : 10,
-    "recordDuration" : 60,
+    "sleepDuration" : 3300,
+    "recordDuration" : 300,
     "enableLED" : 1,
     "activeStartStopPeriods" : 0,
     "timezone" : 0,
-    "useFilter" : 1,
+    "useFilter" : 0,
     "minRecordDuration" : 5,
     "keepWritingMinPos" : 1,
     "keepWritingMemoryPercent" : 50,
@@ -19,3 +19,6 @@
     "goertzelThresh" : 2.5,
     "goertzelFactor" : 0.99
 }
+
+
+

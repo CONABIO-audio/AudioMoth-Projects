@@ -1,9 +1,11 @@
 {
   "startStopPeriods" : [
-          {"startMinutes" : 60, "stopMinutes" : 120},
-          {"startMinutes" : 300, "stopMinutes" : 420},
-          {"startMinutes" : 540, "stopMinutes" : 600},
-          {"startMinutes" : 720, "stopMinutes" : 780},
-          {"startMinutes" : 900, "stopMinutes" : 960}
+          {"startMinutes" : 0, "stopMinutes" : 60},
+          {"startMinutes" : 180, "stopMinutes" : 240},
+          {"startMinutes" : 360, "stopMinutes" : 420},
+          {"startMinutes" : 1080, "stopMinutes" : 1140},
+          {"startMinutes" : 1260, "stopMinutes" : 1320}
   ]
 }
+
+
